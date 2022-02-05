@@ -96,7 +96,7 @@ def Determine_Char(lx:int, hx:int, ly:int, hy:int, img:Image):
         for y in range(ly, hy):
             value += int(pixels[x, y])
     area = (hx - lx) * (hy - ly)
-    value = round(((value / area) / 255) * 10)
+    value = round(((value / area) / 255) * (len(ASCII_SYMBOLS_USABLE) - 1))
     return ASCII_SYMBOLS_USABLE[value]
 
 def ASCIIFy():
