@@ -136,3 +136,7 @@ extract/frames_fullsize/*
 BadApple.mp4
 
 test/
+
+!extract/audio/
+!extract/frames_ascii/
+!extract/frames_fullsize/
