@@ -33,16 +33,25 @@ Output_height = 0
 
 Playback_index = 0
 
+Ascii_frames = []
+
 stdscr = None
 refresh = None
 
 #this function stores the audio under ./extract/audio/sndfile.mp3
-def ExtractAudioTrack(fileName : str):
-    vidClip = mp.VideoFileClip(str(PROG_DIR / fileName)) #open clip in moviePy
+def ExtractAudioTrack():
+    vidClip = mp.VideoFileClip(str(PROG_DIR / sys.argv[1])) #open clip in moviePy
     vidClip.audio.write_audiofile(r"%s" % str(AUDIO_DIR / "sndfile.mp3")) #save audio track
 
-def ExtractVideoFrames(fileName : str):
-    videoCap = cv2.VideoCapture(fileName) #open video file with cv2
+def ExtractVideoFrames():
+    videoCap = cv2.VideoCapture(sys.argv[1])
+    success, img = videoCap.read()
+    for i in tqdm(range(Vid_frames), desc="Extracting frames"): #get all video frames and save them
+        new_ASCIIFy(img)
+        success, img = videoCap.read() #read next frame
+
+def DetermineAspect():
+    videoCap = cv2.VideoCapture(sys.argv[1]) #open video file with cv2
     global Vid_frames
     global Vid_height
     global Vid_width
@@ -53,15 +62,7 @@ def ExtractVideoFrames(fileName : str):
     Vid_width = int(videoCap.get(cv2.CAP_PROP_FRAME_WIDTH))
 
     Vid_framerate = int(videoCap.get(cv2.CAP_PROP_FPS))
-    print(Vid_framerate)
-    success, img = videoCap.read()
-    for i in tqdm(range(Vid_frames), desc="Extracting frames"): #get all video frames and save them
-        cv2.imwrite(str(UNPROC_FRAME_DIR / f"{i}.png"), img)
-        success, img = videoCap.read() #read next frame
 
-def DetermineAspect():
-    global Vid_width
-    global Vid_height
     vid_aspect = Vid_width / Vid_height #get video aspect ratio
 
     global Output_height
@@ -88,6 +89,33 @@ def DetermineAspect():
     print(f"Video size: {Vid_width}, {Vid_height}")
     print(f"Terminal viewport size: {Output_width}, {Output_height}")
     print(f"Pixels per character: {Char_width}, {Char_height}")
+
+def new_ASCIIFy(img):
+    #make use of builtin resizer and store in array
+    global Term_height
+    global Term_width
+
+    global Char_width
+    global Char_height
+
+    global Vid_width
+    global Vid_height
+
+    global Output_width
+    global Output_height
+    frame = Image.fromarray(img)
+    frame = frame.convert("L") #grayscale, lossless
+    frame = frame.resize((Output_width, Output_height))
+    fpx = frame.load()
+    output = ""
+    #loop over pixels
+    for y in range(Output_height):
+        for x in range(Output_width):
+            value = round((int(fpx[x, y]) / 255) * (len(ASCII_SYMBOLS_USABLE) - 1)) 
+            output += ASCII_SYMBOLS_USABLE[value]
+        if (y < Output_height - 1):
+            output += "\n"
+    Ascii_frames.append(output)
 
 def Determine_Char(lx:int, hx:int, ly:int, hy:int, img:Image):
     pixels = img.load()
@@ -135,11 +163,12 @@ def DrawFrame():
     global Playback_index
     global refresh
     if (Playback_index < Vid_frames):
-        with open(str(PROC_FRAME_DIR / f"{Playback_index}.txt"), "r") as ff:
+        #with open(str(PROC_FRAME_DIR / f"{Playback_index}.txt"), "r") as ff:
             #print(ff.read())
-            stdscr.clear()
-            stdscr.addstr(ff.read(), curses.color_pair(1))
-            refresh()
+        stdscr.clear()
+            #stdscr.addstr(ff.read(), curses.color_pair(1))
+        stdscr.addstr(Ascii_frames[Playback_index], curses.color_pair(1))
+        refresh()
 
 def PlaySound():
     playsound(str(AUDIO_DIR / 'sndfile.mp3'))
@@ -152,11 +181,12 @@ def write():
 
 #main code block
 def main():
-    ExtractAudioTrack(sys.argv[1]) #run code for extracting audio information from file
-    ExtractVideoFrames(sys.argv[1]) #run code to get all frames and move them to UNPROC_FRAME_DIR
     DetermineAspect() #get aspect ratio of terminal and video and determine fitting output size
-    if (len(sys.argv) < 3):
-        ASCIIFy() #turn all frames into .txt files ready to steam in
+    ExtractAudioTrack() #run code for extracting audio information from file
+    ExtractVideoFrames() #run code to get all frames and move them to UNPROC_FRAME_DIR
+    # if (len(sys.argv) < 3):
+    #     #ASCIIFy() #turn all frames into .txt files ready to steam in
+    #     new_ASCIIFy()
     
     global stdscr
     global refresh
