@@ -137,6 +137,6 @@ BadApple.mp4
 
 test/
 
-!extract/audio/
-!extract/frames_ascii/
-!extract/frames_fullsize/
+!extract/audio/.gitkeep
+!extract/frames_ascii/.gitkeep
+!extract/frames_fullsize/.gitkeep
