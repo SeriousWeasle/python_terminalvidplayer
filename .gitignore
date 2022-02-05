@@ -127,3 +127,12 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+#output files
+extract/audio/*
+extract/frames_ascii/*
+extract/frames_fullsize/*
+
+BadApple.mp4
+
+test/
